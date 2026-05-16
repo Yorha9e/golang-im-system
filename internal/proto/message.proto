@@ -1,0 +1,64 @@
+syntax = "proto3";
+package proto;
+option go_package = "golang-im-system/internal/proto";
+
+message WsMessage {
+  string message_id = 1;
+  int64  timestamp  = 2;
+  MsgType type      = 3;
+  oneof payload {
+    ChatMessage   chat    = 10;
+    SystemNotice  system  = 11;
+    Heartbeat     hb      = 12;
+    BurnReceipt   receipt = 13;
+    PeerInfo      peer    = 14;
+  }
+}
+
+enum MsgType {
+  CHAT          = 0;
+  SYSTEM        = 1;
+  HEARTBEAT     = 2;
+  BURN_RECEIPT  = 3;
+  PEER_DISCOVER = 4;
+  PRIVATE_CHAT  = 5;
+  RENAME        = 6;
+  WHO           = 7;
+}
+
+message ChatMessage {
+  string from        = 1;
+  string to          = 2;
+  string content     = 3;
+  int32  burn_seconds = 4;
+  int64  burned_at   = 5;
+}
+
+message SystemNotice {
+  SystemType type = 1;
+  string content  = 2;
+  string user     = 3;
+}
+
+enum SystemType {
+  SYS_JOIN  = 0;
+  SYS_LEAVE = 1;
+  SYS_RENAME = 2;
+  SYS_ERROR = 3;
+}
+
+message Heartbeat {
+  int64 ping_ts = 1;
+}
+
+message BurnReceipt {
+  string message_id = 1;
+  int64  burned_at  = 2;
+}
+
+message PeerInfo {
+  string node_id   = 1;
+  string node_name = 2;
+  string addr      = 3;
+  int32  ws_port   = 4;
+}
