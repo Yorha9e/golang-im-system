@@ -13,6 +13,7 @@ import (
 // ServerTransport connects to a ChatServer via WebSocket.
 type ServerTransport struct {
 	serverAddr string
+	token      string
 	conn       *websocket.Conn
 	recv       chan *Message
 	errCh      chan error
@@ -21,9 +22,10 @@ type ServerTransport struct {
 }
 
 // NewServerTransport creates a client transport targeting a ChatServer.
-func NewServerTransport(serverAddr string) *ServerTransport {
+func NewServerTransport(serverAddr, token string) *ServerTransport {
 	return &ServerTransport{
 		serverAddr: serverAddr,
+		token:      token,
 		recv:       make(chan *Message, 256),
 		errCh:      make(chan error, 16),
 	}
@@ -31,7 +33,7 @@ func NewServerTransport(serverAddr string) *ServerTransport {
 
 func (t *ServerTransport) Start(ctx context.Context) error {
 	t.ctx, t.cancel = context.WithCancel(ctx)
-	u := url.URL{Scheme: "ws", Host: t.serverAddr, Path: "/ws"}
+	u := url.URL{Scheme: "ws", Host: t.serverAddr, Path: "/ws", RawQuery: "token=" + t.token}
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
 		return fmt.Errorf("dial server: %w", err)

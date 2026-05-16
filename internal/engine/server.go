@@ -11,10 +11,22 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
+	"golang-im-system/internal/auth"
 	"golang-im-system/internal/burn"
 	"golang-im-system/internal/proto"
+	"golang-im-system/internal/ratelimit"
+	"golang-im-system/internal/store"
 	googleproto "google.golang.org/protobuf/proto"
 )
+
+// Config holds ChatServer dependencies.
+type Config struct {
+	Addr        string
+	JWTSecret   string
+	MsgRate     float64 // messages per second per client
+	MsgBurst    int
+	DBPath      string // SQLite file path, empty = memory
+}
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
@@ -31,25 +43,50 @@ type ClientConn struct {
 
 // ChatServer is the centralized messaging server.
 type ChatServer struct {
-	addr   string
-	online map[string]*ClientConn
-	mu     sync.RWMutex
-	server *http.Server
-	logger *zap.Logger
+	addr    string
+	online  map[string]*ClientConn
+	mu      sync.RWMutex
+	server  *http.Server
+	logger  *zap.Logger
 	burnMgr *burn.Manager
+	authMgr *auth.Manager
+	limiter *ratelimit.Limiter
+	db      *store.Store
 }
 
-// New creates a ChatServer.
-func New(addr string) *ChatServer {
+// New creates a ChatServer with the given config.
+func New(cfg Config) (*ChatServer, error) {
 	logger, _ := zap.NewDevelopment()
+
+	dbPath := cfg.DBPath
+	if dbPath == "" {
+		dbPath = "im.db"
+	}
+	db, err := store.New(dbPath)
+	if err != nil {
+		return nil, fmt.Errorf("db: %w", err)
+	}
+
+	rate := cfg.MsgRate
+	if rate <= 0 {
+		rate = 5
+	}
+	burst := cfg.MsgBurst
+	if burst <= 0 {
+		burst = 10
+	}
+
 	s := &ChatServer{
-		addr:   addr,
-		online: make(map[string]*ClientConn),
-		logger: logger,
+		addr:    cfg.Addr,
+		online:  make(map[string]*ClientConn),
+		logger:  logger,
 		burnMgr: burn.New(),
+		authMgr: auth.New(cfg.JWTSecret, 24*time.Hour),
+		limiter: ratelimit.NewLimiter(rate, burst),
+		db:      db,
 	}
 	s.burnMgr.OnBurn = s.onBurn
-	return s
+	return s, nil
 }
 
 // onBurn is called when a burn timer expires.
@@ -69,9 +106,26 @@ func (s *ChatServer) onBurn(messageID string) {
 func (s *ChatServer) Start() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ws", s.handleWS)
+	mux.HandleFunc("/login", s.handleLogin)
 	s.server = &http.Server{Addr: s.addr, Handler: mux}
 	s.logger.Info("ChatServer starting", zap.String("addr", s.addr))
 	return s.server.ListenAndServe()
+}
+
+func (s *ChatServer) handleLogin(w http.ResponseWriter, r *http.Request) {
+	username := r.URL.Query().Get("user")
+	if username == "" {
+		http.Error(w, "missing user param", http.StatusBadRequest)
+		return
+	}
+	s.db.EnsureUser(username)
+	token, err := s.authMgr.Generate(username)
+	if err != nil {
+		http.Error(w, "token generation failed", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(w, `{"token":"%s"}`, token)
 }
 
 // Stop gracefully shuts down.
@@ -87,10 +141,19 @@ func (s *ChatServer) Stop(ctx context.Context) error {
 	for _, c := range conns {
 		c.conn.Close() // triggers readPump defer → natural cleanup
 	}
-	return s.server.Shutdown(ctx)
+	s.server.Shutdown(ctx)
+	return s.db.Close()
 }
 
 func (s *ChatServer) handleWS(w http.ResponseWriter, r *http.Request) {
+	// JWT validation.
+	token := r.URL.Query().Get("token")
+	username, err := s.authMgr.Validate(token)
+	if err != nil {
+		http.Error(w, "unauthorized: "+err.Error(), http.StatusUnauthorized)
+		return
+	}
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		s.logger.Error("upgrade failed", zap.Error(err))
@@ -102,21 +165,50 @@ func (s *ChatServer) handleWS(w http.ResponseWriter, r *http.Request) {
 		conn: conn,
 		send: make(chan *proto.WsMessage, 256),
 	}
-	client.Name = "user-" + client.ID
+	client.Name = username
 
 	s.mu.Lock()
 	s.online[client.ID] = client
 	s.mu.Unlock()
 
 	s.logger.Info("user online", zap.String("name", client.Name), zap.String("id", client.ID))
+
+	// Send recent message history.
+	go s.sendHistory(client)
+
 	s.broadcastSystem(proto.SystemType_SYS_JOIN, client.Name)
 
 	go s.readPump(client)
 	go s.writePump(client)
 }
 
+func (s *ChatServer) sendHistory(c *ClientConn) {
+	msgs, err := s.db.RecentMessages(50)
+	if err != nil {
+		return
+	}
+	for _, m := range msgs {
+		msg := &proto.WsMessage{
+			Type: proto.MsgType_CHAT,
+			Payload: &proto.WsMessage_Chat{
+				Chat: &proto.ChatMessage{
+					From:        m.FromUser,
+					Content:     m.Content,
+					BurnSeconds: m.BurnSeconds,
+				},
+			},
+		}
+		if m.ToUser != "" {
+			msg.Type = proto.MsgType_PRIVATE_CHAT
+			msg.GetChat().To = m.ToUser
+		}
+		c.send <- msg
+	}
+}
+
 func (s *ChatServer) readPump(c *ClientConn) {
 	defer func() {
+		s.limiter.Remove(c.ID)
 		s.mu.Lock()
 		if !c.closed {
 			c.closed = true
@@ -134,6 +226,12 @@ func (s *ChatServer) readPump(c *ClientConn) {
 		if err != nil {
 			return
 		}
+
+		if !s.limiter.Allow(c.ID) {
+			c.send <- systemMsg("rate limit exceeded, slow down")
+			continue
+		}
+
 		msg := &proto.WsMessage{}
 		if err := googleproto.Unmarshal(raw, msg); err != nil {
 			continue
@@ -177,6 +275,8 @@ func (s *ChatServer) handleChat(from *ClientConn, chat *proto.ChatMessage) {
 	if chat.BurnSeconds > 0 {
 		s.burnMgr.Add(msgID, chat.BurnSeconds)
 	}
+	s.db.SaveMessage(from.Name, "", chat.Content, chat.BurnSeconds)
+
 	out := &proto.WsMessage{
 		MessageId: msgID,
 		Type:      proto.MsgType_CHAT,
@@ -203,6 +303,8 @@ func (s *ChatServer) handlePrivateChat(from *ClientConn, chat *proto.ChatMessage
 	if chat.BurnSeconds > 0 {
 		s.burnMgr.Add(msgID, chat.BurnSeconds)
 	}
+	s.db.SaveMessage(from.Name, chat.To, chat.Content, chat.BurnSeconds)
+
 	out := &proto.WsMessage{
 		MessageId: msgID,
 		Type:      proto.MsgType_PRIVATE_CHAT,
@@ -215,7 +317,7 @@ func (s *ChatServer) handlePrivateChat(from *ClientConn, chat *proto.ChatMessage
 		},
 	}
 	target.send <- out
-	from.send <- out // echo back to sender
+	from.send <- out
 }
 
 func (s *ChatServer) handleWho(from *ClientConn) {

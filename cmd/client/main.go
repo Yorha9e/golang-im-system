@@ -3,8 +3,11 @@ package main
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"strings"
 
@@ -29,7 +32,9 @@ func main() {
 		fmt.Scanln(&displayName)
 	}
 
-	t := createTransport(displayName)
+	token := login(*server, displayName)
+
+	t := createTransport(displayName, token)
 	if t == nil {
 		fmt.Fprintf(os.Stderr, "failed to create transport for mode %q\n", *mode)
 		os.Exit(1)
@@ -61,10 +66,27 @@ func main() {
 	select {}
 }
 
-func createTransport(displayName string) transport.Transport {
+func login(serverAddr, username string) string {
+	resp, err := http.Get(fmt.Sprintf("http://%s/login?user=%s", serverAddr, username))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "login failed: %v\n", err)
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	var result struct{ Token string }
+	json.Unmarshal(body, &result)
+	if result.Token == "" {
+		fmt.Fprintf(os.Stderr, "login failed: no token returned\n")
+		os.Exit(1)
+	}
+	return result.Token
+}
+
+func createTransport(displayName, token string) transport.Transport {
 	switch *mode {
 	case "server":
-		return transport.NewServerTransport(*server)
+		return transport.NewServerTransport(*server, token)
 
 	case "lan_p2p":
 		// return transport.NewLANP2PTransport(displayName, *port)

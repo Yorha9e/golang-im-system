@@ -12,9 +12,16 @@ import (
 
 func main() {
 	addr := flag.String("addr", ":8888", "listen address")
+	dbPath := flag.String("db", "im.db", "SQLite database path")
 	flag.Parse()
 
-	server := engine.New(*addr)
+	server, err := engine.New(engine.Config{
+		Addr:   *addr,
+		DBPath: *dbPath,
+	})
+	if err != nil {
+		panic(err)
+	}
 	go func() {
 		if err := server.Start(); err != nil {
 			panic(err)

@@ -23,6 +23,7 @@ type WANP2PTransport struct {
 	nodeName string
 	sigAddr  string           // signaling server addr (host:port)
 	fallback string           // ChatServer addr for fallback
+	token    string           // JWT for fallback
 
 	sigClient *signaling.SignalingClient
 	peerConns map[string]*webrtc.PeerConnection
@@ -39,12 +40,13 @@ type WANP2PTransport struct {
 }
 
 // NewWANP2PTransport creates a WAN P2P transport.
-func NewWANP2PTransport(name, signalingAddr, fallbackServerAddr string) *WANP2PTransport {
+func NewWANP2PTransport(name, signalingAddr, fallbackServerAddr, token string) *WANP2PTransport {
 	return &WANP2PTransport{
 		nodeID:   uuid.New().String()[:8],
 		nodeName: name,
 		sigAddr:  signalingAddr,
 		fallback: fallbackServerAddr,
+		token:    token,
 		peerConns: make(map[string]*webrtc.PeerConnection),
 		dataChans: make(map[string]*webrtc.DataChannel),
 		recv:      make(chan *Message, 256),
@@ -360,7 +362,7 @@ func (t *WANP2PTransport) tryFallback() {
 		t.OnFallback()
 	}
 
-	t.fallbackTransport = NewServerTransport(t.fallback)
+	t.fallbackTransport = NewServerTransport(t.fallback, t.token)
 	go func() {
 		if err := t.fallbackTransport.Start(t.ctx); err != nil {
 			t.errCh <- fmt.Errorf("fallback start: %w", err)
