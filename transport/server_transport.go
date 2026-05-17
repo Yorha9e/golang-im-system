@@ -6,7 +6,7 @@ import (
 	"net/url"
 
 	"github.com/gorilla/websocket"
-	"golang-im-system/internal/proto"
+	"golang-im-system/proto"
 	googleproto "google.golang.org/protobuf/proto"
 )
 

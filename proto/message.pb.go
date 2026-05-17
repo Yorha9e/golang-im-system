@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v5.28.3
-// source: internal/proto/message.proto
+// source: proto/message.proto
 
 package proto
 
@@ -69,11 +69,11 @@ func (x MsgType) String() string {
 }
 
 func (MsgType) Descriptor() protoreflect.EnumDescriptor {
-	return file_internal_proto_message_proto_enumTypes[0].Descriptor()
+	return file_proto_message_proto_enumTypes[0].Descriptor()
 }
 
 func (MsgType) Type() protoreflect.EnumType {
-	return &file_internal_proto_message_proto_enumTypes[0]
+	return &file_proto_message_proto_enumTypes[0]
 }
 
 func (x MsgType) Number() protoreflect.EnumNumber {
@@ -82,7 +82,7 @@ func (x MsgType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use MsgType.Descriptor instead.
 func (MsgType) EnumDescriptor() ([]byte, []int) {
-	return file_internal_proto_message_proto_rawDescGZIP(), []int{0}
+	return file_proto_message_proto_rawDescGZIP(), []int{0}
 }
 
 type SystemType int32
@@ -121,11 +121,11 @@ func (x SystemType) String() string {
 }
 
 func (SystemType) Descriptor() protoreflect.EnumDescriptor {
-	return file_internal_proto_message_proto_enumTypes[1].Descriptor()
+	return file_proto_message_proto_enumTypes[1].Descriptor()
 }
 
 func (SystemType) Type() protoreflect.EnumType {
-	return &file_internal_proto_message_proto_enumTypes[1]
+	return &file_proto_message_proto_enumTypes[1]
 }
 
 func (x SystemType) Number() protoreflect.EnumNumber {
@@ -134,7 +134,7 @@ func (x SystemType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SystemType.Descriptor instead.
 func (SystemType) EnumDescriptor() ([]byte, []int) {
-	return file_internal_proto_message_proto_rawDescGZIP(), []int{1}
+	return file_proto_message_proto_rawDescGZIP(), []int{1}
 }
 
 type WsMessage struct {
@@ -156,7 +156,7 @@ type WsMessage struct {
 
 func (x *WsMessage) Reset() {
 	*x = WsMessage{}
-	mi := &file_internal_proto_message_proto_msgTypes[0]
+	mi := &file_proto_message_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -168,7 +168,7 @@ func (x *WsMessage) String() string {
 func (*WsMessage) ProtoMessage() {}
 
 func (x *WsMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_proto_message_proto_msgTypes[0]
+	mi := &file_proto_message_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -181,7 +181,7 @@ func (x *WsMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WsMessage.ProtoReflect.Descriptor instead.
 func (*WsMessage) Descriptor() ([]byte, []int) {
-	return file_internal_proto_message_proto_rawDescGZIP(), []int{0}
+	return file_proto_message_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *WsMessage) GetMessageId() string {
@@ -304,7 +304,7 @@ type ChatMessage struct {
 
 func (x *ChatMessage) Reset() {
 	*x = ChatMessage{}
-	mi := &file_internal_proto_message_proto_msgTypes[1]
+	mi := &file_proto_message_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -316,7 +316,7 @@ func (x *ChatMessage) String() string {
 func (*ChatMessage) ProtoMessage() {}
 
 func (x *ChatMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_proto_message_proto_msgTypes[1]
+	mi := &file_proto_message_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -329,7 +329,7 @@ func (x *ChatMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatMessage.ProtoReflect.Descriptor instead.
 func (*ChatMessage) Descriptor() ([]byte, []int) {
-	return file_internal_proto_message_proto_rawDescGZIP(), []int{1}
+	return file_proto_message_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ChatMessage) GetFrom() string {
@@ -378,7 +378,7 @@ type SystemNotice struct {
 
 func (x *SystemNotice) Reset() {
 	*x = SystemNotice{}
-	mi := &file_internal_proto_message_proto_msgTypes[2]
+	mi := &file_proto_message_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -390,7 +390,7 @@ func (x *SystemNotice) String() string {
 func (*SystemNotice) ProtoMessage() {}
 
 func (x *SystemNotice) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_proto_message_proto_msgTypes[2]
+	mi := &file_proto_message_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -403,7 +403,7 @@ func (x *SystemNotice) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SystemNotice.ProtoReflect.Descriptor instead.
 func (*SystemNotice) Descriptor() ([]byte, []int) {
-	return file_internal_proto_message_proto_rawDescGZIP(), []int{2}
+	return file_proto_message_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *SystemNotice) GetType() SystemType {
@@ -436,7 +436,7 @@ type Heartbeat struct {
 
 func (x *Heartbeat) Reset() {
 	*x = Heartbeat{}
-	mi := &file_internal_proto_message_proto_msgTypes[3]
+	mi := &file_proto_message_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -448,7 +448,7 @@ func (x *Heartbeat) String() string {
 func (*Heartbeat) ProtoMessage() {}
 
 func (x *Heartbeat) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_proto_message_proto_msgTypes[3]
+	mi := &file_proto_message_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -461,7 +461,7 @@ func (x *Heartbeat) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Heartbeat.ProtoReflect.Descriptor instead.
 func (*Heartbeat) Descriptor() ([]byte, []int) {
-	return file_internal_proto_message_proto_rawDescGZIP(), []int{3}
+	return file_proto_message_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Heartbeat) GetPingTs() int64 {
@@ -481,7 +481,7 @@ type BurnReceipt struct {
 
 func (x *BurnReceipt) Reset() {
 	*x = BurnReceipt{}
-	mi := &file_internal_proto_message_proto_msgTypes[4]
+	mi := &file_proto_message_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -493,7 +493,7 @@ func (x *BurnReceipt) String() string {
 func (*BurnReceipt) ProtoMessage() {}
 
 func (x *BurnReceipt) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_proto_message_proto_msgTypes[4]
+	mi := &file_proto_message_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -506,7 +506,7 @@ func (x *BurnReceipt) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BurnReceipt.ProtoReflect.Descriptor instead.
 func (*BurnReceipt) Descriptor() ([]byte, []int) {
-	return file_internal_proto_message_proto_rawDescGZIP(), []int{4}
+	return file_proto_message_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *BurnReceipt) GetMessageId() string {
@@ -535,7 +535,7 @@ type PeerInfo struct {
 
 func (x *PeerInfo) Reset() {
 	*x = PeerInfo{}
-	mi := &file_internal_proto_message_proto_msgTypes[5]
+	mi := &file_proto_message_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -547,7 +547,7 @@ func (x *PeerInfo) String() string {
 func (*PeerInfo) ProtoMessage() {}
 
 func (x *PeerInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_proto_message_proto_msgTypes[5]
+	mi := &file_proto_message_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -560,7 +560,7 @@ func (x *PeerInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PeerInfo.ProtoReflect.Descriptor instead.
 func (*PeerInfo) Descriptor() ([]byte, []int) {
-	return file_internal_proto_message_proto_rawDescGZIP(), []int{5}
+	return file_proto_message_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *PeerInfo) GetNodeId() string {
@@ -591,11 +591,11 @@ func (x *PeerInfo) GetWsPort() int32 {
 	return 0
 }
 
-var File_internal_proto_message_proto protoreflect.FileDescriptor
+var File_proto_message_proto protoreflect.FileDescriptor
 
-const file_internal_proto_message_proto_rawDesc = "" +
+const file_proto_message_proto_rawDesc = "" +
 	"\n" +
-	"\x1cinternal/proto/message.proto\x12\x05proto\"\xcb\x02\n" +
+	"\x13proto/message.proto\x12\x05proto\"\xcb\x02\n" +
 	"\tWsMessage\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x1c\n" +
@@ -646,23 +646,23 @@ const file_internal_proto_message_proto_rawDesc = "" +
 	"\tSYS_LEAVE\x10\x01\x12\x0e\n" +
 	"\n" +
 	"SYS_RENAME\x10\x02\x12\r\n" +
-	"\tSYS_ERROR\x10\x03B!Z\x1fgolang-im-system/internal/protob\x06proto3"
+	"\tSYS_ERROR\x10\x03B\x18Z\x16golang-im-system/protob\x06proto3"
 
 var (
-	file_internal_proto_message_proto_rawDescOnce sync.Once
-	file_internal_proto_message_proto_rawDescData []byte
+	file_proto_message_proto_rawDescOnce sync.Once
+	file_proto_message_proto_rawDescData []byte
 )
 
-func file_internal_proto_message_proto_rawDescGZIP() []byte {
-	file_internal_proto_message_proto_rawDescOnce.Do(func() {
-		file_internal_proto_message_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_internal_proto_message_proto_rawDesc), len(file_internal_proto_message_proto_rawDesc)))
+func file_proto_message_proto_rawDescGZIP() []byte {
+	file_proto_message_proto_rawDescOnce.Do(func() {
+		file_proto_message_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_message_proto_rawDesc), len(file_proto_message_proto_rawDesc)))
 	})
-	return file_internal_proto_message_proto_rawDescData
+	return file_proto_message_proto_rawDescData
 }
 
-var file_internal_proto_message_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_internal_proto_message_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-var file_internal_proto_message_proto_goTypes = []any{
+var file_proto_message_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_proto_message_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_proto_message_proto_goTypes = []any{
 	(MsgType)(0),         // 0: proto.MsgType
 	(SystemType)(0),      // 1: proto.SystemType
 	(*WsMessage)(nil),    // 2: proto.WsMessage
@@ -672,7 +672,7 @@ var file_internal_proto_message_proto_goTypes = []any{
 	(*BurnReceipt)(nil),  // 6: proto.BurnReceipt
 	(*PeerInfo)(nil),     // 7: proto.PeerInfo
 }
-var file_internal_proto_message_proto_depIdxs = []int32{
+var file_proto_message_proto_depIdxs = []int32{
 	0, // 0: proto.WsMessage.type:type_name -> proto.MsgType
 	3, // 1: proto.WsMessage.chat:type_name -> proto.ChatMessage
 	4, // 2: proto.WsMessage.system:type_name -> proto.SystemNotice
@@ -687,12 +687,12 @@ var file_internal_proto_message_proto_depIdxs = []int32{
 	0, // [0:7] is the sub-list for field type_name
 }
 
-func init() { file_internal_proto_message_proto_init() }
-func file_internal_proto_message_proto_init() {
-	if File_internal_proto_message_proto != nil {
+func init() { file_proto_message_proto_init() }
+func file_proto_message_proto_init() {
+	if File_proto_message_proto != nil {
 		return
 	}
-	file_internal_proto_message_proto_msgTypes[0].OneofWrappers = []any{
+	file_proto_message_proto_msgTypes[0].OneofWrappers = []any{
 		(*WsMessage_Chat)(nil),
 		(*WsMessage_System)(nil),
 		(*WsMessage_Hb)(nil),
@@ -703,18 +703,18 @@ func file_internal_proto_message_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_proto_message_proto_rawDesc), len(file_internal_proto_message_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_message_proto_rawDesc), len(file_proto_message_proto_rawDesc)),
 			NumEnums:      2,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_internal_proto_message_proto_goTypes,
-		DependencyIndexes: file_internal_proto_message_proto_depIdxs,
-		EnumInfos:         file_internal_proto_message_proto_enumTypes,
-		MessageInfos:      file_internal_proto_message_proto_msgTypes,
+		GoTypes:           file_proto_message_proto_goTypes,
+		DependencyIndexes: file_proto_message_proto_depIdxs,
+		EnumInfos:         file_proto_message_proto_enumTypes,
+		MessageInfos:      file_proto_message_proto_msgTypes,
 	}.Build()
-	File_internal_proto_message_proto = out.File
-	file_internal_proto_message_proto_goTypes = nil
-	file_internal_proto_message_proto_depIdxs = nil
+	File_proto_message_proto = out.File
+	file_proto_message_proto_goTypes = nil
+	file_proto_message_proto_depIdxs = nil
 }

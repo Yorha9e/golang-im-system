@@ -1,6 +1,6 @@
 syntax = "proto3";
 package proto;
-option go_package = "golang-im-system/internal/proto";
+option go_package = "golang-im-system/proto";
 
 message WsMessage {
   string message_id = 1;

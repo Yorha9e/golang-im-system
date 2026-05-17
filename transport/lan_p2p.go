@@ -10,8 +10,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"golang-im-system/internal/discovery"
-	"golang-im-system/internal/proto"
+	"golang-im-system/discovery"
+	"golang-im-system/proto"
 	googleproto "google.golang.org/protobuf/proto"
 )
 

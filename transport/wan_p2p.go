@@ -9,8 +9,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pion/webrtc/v3"
-	"golang-im-system/internal/proto"
-	"golang-im-system/internal/signaling"
+	"golang-im-system/proto"
+	"golang-im-system/signaling"
 	googleproto "google.golang.org/protobuf/proto"
 )
 

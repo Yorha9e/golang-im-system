@@ -3,7 +3,7 @@ package transport
 import (
 	"context"
 
-	"golang-im-system/internal/proto"
+	"golang-im-system/proto"
 )
 
 // Peer represents a connected peer/node in the network.
