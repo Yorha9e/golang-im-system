@@ -82,19 +82,21 @@ func (t *LANP2PTransport) Stop() error {
 	if t.cancel != nil {
 		t.cancel()
 	}
-	t.mu.Lock()
-	for _, p := range t.peers {
-		close(p.send)
-		p.conn.Close()
+	if t.listener != nil {
+		t.listener.Close()
 	}
-	t.peers = make(map[string]*p2pPeer)
-	t.mu.Unlock()
-
 	if t.disc != nil {
 		t.disc.Stop()
 	}
-	if t.listener != nil {
-		t.listener.Close()
+	// Collect conns under lock, close outside to avoid deadlock with readPump defers.
+	t.mu.Lock()
+	conns := make([]*websocket.Conn, 0, len(t.peers))
+	for _, p := range t.peers {
+		conns = append(conns, p.conn)
+	}
+	t.mu.Unlock()
+	for _, c := range conns {
+		c.Close()
 	}
 	return nil
 }
