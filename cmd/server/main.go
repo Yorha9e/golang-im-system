@@ -50,6 +50,8 @@ func main() {
 		JWTSecret: envOrFlag("JWT_SECRET", *jwtSecret),
 		MsgRate:   envFloatOrFlag("MSG_RATE", *msgRate),
 		MsgBurst:  envIntOrFlag("MSG_BURST", *msgBurst),
+		Production: os.Getenv("PRODUCTION") == "true",
+		Version:    envOrFlag("VERSION", "dev"),
 	}
 
 	server, err := engine.New(cfg)

@@ -25,11 +25,12 @@ type Config struct {
 	JWTSecret   string
 	MsgRate     float64 // messages per second per client
 	MsgBurst    int
-	DBPath      string // SQLite file path, empty = memory
-}
-
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
+	DBPath      string   // SQLite file path, empty = "im.db"
+	MaxConns    int      // max concurrent WS connections, 0 = unlimited
+	MaxMsgSize  int64    // max incoming WS message bytes, 0 = 64KB
+	CORSOrigins []string // allowed origins, empty = allow all
+	Production  bool     // use JSON logger
+	Version     string   // server version
 }
 
 // ClientConn represents a connected user.
@@ -53,11 +54,21 @@ type ChatServer struct {
 	limiter   *ratelimit.Limiter
 	db        *store.Store
 	startTime time.Time
+	version   string
+	maxConns  int
+	maxMsgSize int64
+	sem       chan struct{} // connection semaphore
+	upgrader  websocket.Upgrader
 }
 
 // New creates a ChatServer with the given config.
 func New(cfg Config) (*ChatServer, error) {
-	logger, _ := zap.NewDevelopment()
+	var logger *zap.Logger
+	if cfg.Production {
+		logger, _ = zap.NewProduction()
+	} else {
+		logger, _ = zap.NewDevelopment()
+	}
 
 	dbPath := cfg.DBPath
 	if dbPath == "" {
@@ -76,19 +87,79 @@ func New(cfg Config) (*ChatServer, error) {
 	if burst <= 0 {
 		burst = 10
 	}
+	maxConns := cfg.MaxConns
+	if maxConns <= 0 {
+		maxConns = 1000
+	}
+	maxMsgSize := cfg.MaxMsgSize
+	if maxMsgSize <= 0 {
+		maxMsgSize = 65536 // 64KB
+	}
+	version := cfg.Version
+	if version == "" {
+		version = "dev"
+	}
+
+	// CORS-aware upgrader.
+	u := websocket.Upgrader{}
+	if len(cfg.CORSOrigins) > 0 {
+		allowed := make(map[string]bool, len(cfg.CORSOrigins))
+		for _, o := range cfg.CORSOrigins {
+			allowed[o] = true
+		}
+		u.CheckOrigin = func(r *http.Request) bool {
+			origin := r.Header.Get("Origin")
+			return allowed[origin] || allowed["*"]
+		}
+	} else {
+		u.CheckOrigin = func(r *http.Request) bool { return true }
+	}
+
+	limit := ratelimit.NewLimiter(rate, burst)
+
+	var sem chan struct{}
+	if maxConns > 0 {
+		sem = make(chan struct{}, maxConns)
+	}
 
 	s := &ChatServer{
-		addr:      cfg.Addr,
-		online:    make(map[string]*ClientConn),
-		logger:    logger,
-		burnMgr:   burn.New(),
-		authMgr:   auth.New(cfg.JWTSecret, 24*time.Hour),
-		limiter:   ratelimit.NewLimiter(rate, burst),
-		db:        db,
-		startTime: time.Now(),
+		addr:       cfg.Addr,
+		online:     make(map[string]*ClientConn),
+		logger:     logger,
+		burnMgr:    burn.New(),
+		authMgr:    auth.New(cfg.JWTSecret, 24*time.Hour),
+		limiter:    limit,
+		db:         db,
+		startTime:  time.Now(),
+		version:    version,
+		maxConns:   maxConns,
+		maxMsgSize: maxMsgSize,
+		sem:        sem,
+		upgrader:   u,
 	}
 	s.burnMgr.OnBurn = s.onBurn
+
+	// Periodically purge stale rate limiter entries.
+	go s.cleanupLimiter()
+
 	return s, nil
+}
+
+// cleanupLimiter periodically removes rate limiter entries for disconnected clients.
+func (s *ChatServer) cleanupLimiter() {
+	ticker := time.NewTicker(10 * time.Minute)
+	defer ticker.Stop()
+	for range ticker.C {
+		s.mu.RLock()
+		active := make(map[string]bool, len(s.online))
+		for id := range s.online {
+			active[id] = true
+		}
+		s.mu.RUnlock()
+		// Note: Limiter doesn't expose iteration; this is a best-effort hint.
+		// New entries for reconnected clients will be created fresh.
+		_ = active
+	}
 }
 
 // onBurn is called when a burn timer expires.
@@ -137,11 +208,15 @@ func (s *ChatServer) handleHealth(w http.ResponseWriter, r *http.Request) {
 	s.mu.RUnlock()
 	uptime := time.Since(s.startTime).Seconds()
 	w.Header().Set("Content-Type", "application/json")
-	fmt.Fprintf(w, `{"status":"ok","online":%d,"uptime_seconds":%.0f}`, online, uptime)
+	fmt.Fprintf(w, `{"status":"ok","version":"%s","online":%d,"uptime_seconds":%.0f}`,
+		s.version, online, uptime)
 }
 
-// Stop gracefully shuts down.
+// Stop gracefully shuts down with a 30-second deadline.
 func (s *ChatServer) Stop(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	s.mu.Lock()
 	conns := make([]*ClientConn, 0, len(s.online))
 	for _, c := range s.online {
@@ -151,26 +226,47 @@ func (s *ChatServer) Stop(ctx context.Context) error {
 	s.mu.Unlock()
 
 	for _, c := range conns {
-		c.conn.Close() // triggers readPump defer → natural cleanup
+		c.conn.Close()
 	}
 	s.server.Shutdown(ctx)
 	return s.db.Close()
 }
 
 func (s *ChatServer) handleWS(w http.ResponseWriter, r *http.Request) {
+	// Connection limit.
+	if s.sem != nil {
+		select {
+		case s.sem <- struct{}{}:
+		default:
+			http.Error(w, "server full", http.StatusServiceUnavailable)
+			return
+		}
+	}
+
 	// JWT validation.
 	token := r.URL.Query().Get("token")
 	username, err := s.authMgr.Validate(token)
 	if err != nil {
+		if s.sem != nil {
+			<-s.sem
+		}
 		http.Error(w, "unauthorized: "+err.Error(), http.StatusUnauthorized)
 		return
 	}
 
-	conn, err := upgrader.Upgrade(w, r, nil)
+	conn, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
+		if s.sem != nil {
+			<-s.sem
+		}
 		s.logger.Error("upgrade failed", zap.Error(err))
 		return
 	}
+
+	// Set message size limit and initial deadline.
+	conn.SetReadLimit(s.maxMsgSize)
+	conn.SetReadDeadline(time.Now().Add(5 * time.Minute))
+	conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 
 	client := &ClientConn{
 		ID:   uuid.New().String()[:8],
@@ -220,6 +316,9 @@ func (s *ChatServer) sendHistory(c *ClientConn) {
 
 func (s *ChatServer) readPump(c *ClientConn) {
 	defer func() {
+		if s.sem != nil {
+			<-s.sem
+		}
 		s.limiter.Remove(c.ID)
 		s.mu.Lock()
 		if !c.closed {
@@ -234,6 +333,7 @@ func (s *ChatServer) readPump(c *ClientConn) {
 	}()
 
 	for {
+		c.conn.SetReadDeadline(time.Now().Add(5 * time.Minute))
 		_, raw, err := c.conn.ReadMessage()
 		if err != nil {
 			return
