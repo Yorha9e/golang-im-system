@@ -43,15 +43,16 @@ type ClientConn struct {
 
 // ChatServer is the centralized messaging server.
 type ChatServer struct {
-	addr    string
-	online  map[string]*ClientConn
-	mu      sync.RWMutex
-	server  *http.Server
-	logger  *zap.Logger
-	burnMgr *burn.Manager
-	authMgr *auth.Manager
-	limiter *ratelimit.Limiter
-	db      *store.Store
+	addr      string
+	online    map[string]*ClientConn
+	mu        sync.RWMutex
+	server    *http.Server
+	logger    *zap.Logger
+	burnMgr   *burn.Manager
+	authMgr   *auth.Manager
+	limiter   *ratelimit.Limiter
+	db        *store.Store
+	startTime time.Time
 }
 
 // New creates a ChatServer with the given config.
@@ -77,13 +78,14 @@ func New(cfg Config) (*ChatServer, error) {
 	}
 
 	s := &ChatServer{
-		addr:    cfg.Addr,
-		online:  make(map[string]*ClientConn),
-		logger:  logger,
-		burnMgr: burn.New(),
-		authMgr: auth.New(cfg.JWTSecret, 24*time.Hour),
-		limiter: ratelimit.NewLimiter(rate, burst),
-		db:      db,
+		addr:      cfg.Addr,
+		online:    make(map[string]*ClientConn),
+		logger:    logger,
+		burnMgr:   burn.New(),
+		authMgr:   auth.New(cfg.JWTSecret, 24*time.Hour),
+		limiter:   ratelimit.NewLimiter(rate, burst),
+		db:        db,
+		startTime: time.Now(),
 	}
 	s.burnMgr.OnBurn = s.onBurn
 	return s, nil
@@ -107,6 +109,7 @@ func (s *ChatServer) Start() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ws", s.handleWS)
 	mux.HandleFunc("/login", s.handleLogin)
+	mux.HandleFunc("/health", s.handleHealth)
 	s.server = &http.Server{Addr: s.addr, Handler: mux}
 	s.logger.Info("ChatServer starting", zap.String("addr", s.addr))
 	return s.server.ListenAndServe()
@@ -126,6 +129,15 @@ func (s *ChatServer) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(w, `{"token":"%s"}`, token)
+}
+
+func (s *ChatServer) handleHealth(w http.ResponseWriter, r *http.Request) {
+	s.mu.RLock()
+	online := len(s.online)
+	s.mu.RUnlock()
+	uptime := time.Since(s.startTime).Seconds()
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(w, `{"status":"ok","online":%d,"uptime_seconds":%.0f}`, online, uptime)
 }
 
 // Stop gracefully shuts down.

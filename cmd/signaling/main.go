@@ -3,15 +3,21 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
 
 	"github.com/Yorha9e/golang-im-system/signaling"
 )
 
 func main() {
-	addr := flag.String("addr", ":7000", "signaling server listen address")
+	addr := flag.String("addr", ":7000", "listen address ($SIGNALING_ADDR)")
 	flag.Parse()
 
-	server := signaling.NewSignalingServer(*addr)
-	log.Printf("SignalingServer starting on %s", *addr)
+	bind := *addr
+	if v := os.Getenv("SIGNALING_ADDR"); v != "" {
+		bind = v
+	}
+
+	server := signaling.NewSignalingServer(bind)
+	log.Printf("SignalingServer starting on %s", bind)
 	log.Fatal(server.Start())
 }
