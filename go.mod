@@ -1,4 +1,4 @@
-module golang-im-system
+module github.com/Yorha9e/golang-im-system
 
 go 1.25.1
 

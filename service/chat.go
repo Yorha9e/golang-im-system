@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"golang-im-system/burn"
-	"golang-im-system/proto"
-	"golang-im-system/transport"
+	"github.com/Yorha9e/golang-im-system/burn"
+	"github.com/Yorha9e/golang-im-system/proto"
+	"github.com/Yorha9e/golang-im-system/transport"
 	googleproto "google.golang.org/protobuf/proto"
 )
 

@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"golang-im-system/internal/engine"
-	"golang-im-system/transport"
+	"github.com/Yorha9e/golang-im-system/internal/engine"
+	"github.com/Yorha9e/golang-im-system/transport"
 )
 
 func startTestServer(t *testing.T) *engine.ChatServer {

@@ -646,7 +646,7 @@ const file_proto_message_proto_rawDesc = "" +
 	"\tSYS_LEAVE\x10\x01\x12\x0e\n" +
 	"\n" +
 	"SYS_RENAME\x10\x02\x12\r\n" +
-	"\tSYS_ERROR\x10\x03B\x18Z\x16golang-im-system/protob\x06proto3"
+	"\tSYS_ERROR\x10\x03B+Z)github.com/Yorha9e/golang-im-system/protob\x06proto3"
 
 var (
 	file_proto_message_proto_rawDescOnce sync.Once

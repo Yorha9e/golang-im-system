@@ -4,7 +4,7 @@ import (
 	"flag"
 	"log"
 
-	"golang-im-system/signaling"
+	"github.com/Yorha9e/golang-im-system/signaling"
 )
 
 func main() {

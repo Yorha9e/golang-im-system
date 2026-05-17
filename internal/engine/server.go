@@ -11,11 +11,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
-	"golang-im-system/internal/auth"
-	"golang-im-system/burn"
-	"golang-im-system/proto"
-	"golang-im-system/internal/ratelimit"
-	"golang-im-system/internal/store"
+	"github.com/Yorha9e/golang-im-system/internal/auth"
+	"github.com/Yorha9e/golang-im-system/burn"
+	"github.com/Yorha9e/golang-im-system/proto"
+	"github.com/Yorha9e/golang-im-system/internal/ratelimit"
+	"github.com/Yorha9e/golang-im-system/internal/store"
 	googleproto "google.golang.org/protobuf/proto"
 )
 

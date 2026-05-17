@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"golang-im-system/internal/engine"
+	"github.com/Yorha9e/golang-im-system/internal/engine"
 )
 
 func main() {

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"golang-im-system/proto"
+	"github.com/Yorha9e/golang-im-system/proto"
 	googleproto "google.golang.org/protobuf/proto"
 )
 
