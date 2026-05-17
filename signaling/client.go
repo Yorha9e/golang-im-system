@@ -3,6 +3,7 @@ package signaling
 import (
 	"encoding/json"
 	"net/url"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -12,6 +13,7 @@ type SignalingClient struct {
 	serverURL   string
 	name        string
 	conn        *websocket.Conn
+	writeMu     sync.Mutex
 	OnMessage   func(SigMessage)
 	OnPeerJoin  func(id, name string)
 	OnPeerLeave func(id string)
@@ -68,13 +70,18 @@ func (c *SignalingClient) readLoop() {
 	}
 }
 
-// Send marshals and sends a signaling message.
+// Send marshals and sends a signaling message. Thread-safe.
 func (c *SignalingClient) Send(msg SigMessage) error {
+	c.writeMu.Lock()
+	defer c.writeMu.Unlock()
 	data, _ := json.Marshal(msg)
 	return c.conn.WriteMessage(websocket.TextMessage, data)
 }
 
-// Close shuts down the connection.
+// Close shuts down the connection. Safe to call even if not connected.
 func (c *SignalingClient) Close() error {
-	return c.conn.Close()
+	if c.conn != nil {
+		return c.conn.Close()
+	}
+	return nil
 }

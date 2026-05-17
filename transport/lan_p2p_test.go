@@ -2,6 +2,7 @@ package transport
 
 import (
 	"context"
+	"net"
 	"testing"
 	"time"
 
@@ -9,7 +10,25 @@ import (
 	googleproto "google.golang.org/protobuf/proto"
 )
 
+func multicastAvailable() bool {
+	addr, _ := net.ResolveUDPAddr("udp", "239.255.0.3:19998")
+	conn, err := net.ListenMulticastUDP("udp", nil, addr)
+	if err != nil {
+		return false
+	}
+	defer conn.Close()
+	// Try sending and receiving a test packet.
+	data := []byte("test")
+	go conn.WriteToUDP(data, addr)
+	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_, _, err = conn.ReadFromUDP(make([]byte, 64))
+	return err == nil
+}
+
 func TestLANP2PDiscoveryAndMessage(t *testing.T) {
+	if !multicastAvailable() {
+		t.Skip("UDP multicast not available in this environment")
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -89,6 +108,7 @@ func TestLANP2PDiscoveryAndMessage(t *testing.T) {
 }
 
 func TestLANP2PWhoAndDisconnect(t *testing.T) {
+	if !multicastAvailable() { t.Skip("UDP multicast not available") }
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -131,6 +151,7 @@ func TestLANP2PWhoAndDisconnect(t *testing.T) {
 }
 
 func TestLANP2PBinaryRoundtrip(t *testing.T) {
+	if !multicastAvailable() { t.Skip("UDP multicast not available") }
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

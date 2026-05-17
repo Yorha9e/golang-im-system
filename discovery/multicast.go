@@ -70,10 +70,27 @@ func (d *MulticastDiscovery) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	conn, err := net.ListenMulticastUDP("udp", nil, addr)
-	if err != nil {
-		return err
+
+	var conn *net.UDPConn
+	// Try each active interface until we find one that works.
+	ifaces, _ := net.Interfaces()
+	for _, iface := range ifaces {
+		if iface.Flags&net.FlagMulticast == 0 || iface.Flags&net.FlagUp == 0 {
+			continue
+		}
+		conn, err = net.ListenMulticastUDP("udp", &iface, addr)
+		if err == nil {
+			break
+		}
 	}
+	// Fallback: try with nil interface (system default).
+	if conn == nil {
+		conn, err = net.ListenMulticastUDP("udp", nil, addr)
+		if err != nil {
+			return err
+		}
+	}
+
 	d.conn = conn
 
 	go d.listen(ctx)

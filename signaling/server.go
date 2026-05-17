@@ -47,8 +47,9 @@ func NewSignalingServer(addr string) *SignalingServer {
 
 // Start begins listening for WebSocket connections.
 func (s *SignalingServer) Start() error {
-	http.HandleFunc("/signal", s.handleWS)
-	return http.ListenAndServe(s.addr, nil)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/signal", s.handleWS)
+	return http.ListenAndServe(s.addr, mux)
 }
 
 func (s *SignalingServer) handleWS(w http.ResponseWriter, r *http.Request) {
@@ -65,6 +66,15 @@ func (s *SignalingServer) handleWS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.mu.Lock()
+	// Tell new peer about existing peers.
+	for _, existing := range s.peers {
+		data, _ := json.Marshal(SigMessage{
+			Type:    "peer_join",
+			From:    existing.ID,
+			Payload: mustMarshalJSON(PeerInfo{ID: existing.ID, Name: existing.Name}),
+		})
+		peer.send <- data
+	}
 	s.peers[peer.ID] = peer
 	s.mu.Unlock()
 
